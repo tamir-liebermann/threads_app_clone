@@ -5,6 +5,7 @@
 // Resource: https://docs.svix.com/receiving/verifying-payloads/why
 // It's a good practice to verify webhooks. Above article shows why we should do it
 import { Webhook, WebhookRequiredHeaders } from "svix";
+import express, {Request, Response} from 'express'
 import { headers } from "next/headers";
 
 import { IncomingHttpHeaders } from "http";
@@ -17,6 +18,9 @@ import {
   removeUserFromCommunity,
   updateCommunityInfo,
 } from "@/lib/actions/community.actions";
+
+const app = express();
+app.use(express.json());
 
 // Resource: https://clerk.com/docs/integration/webhooks#supported-events
 // Above document lists the supported events
@@ -34,14 +38,14 @@ type Event = {
   type: EventType;
 };
 
-export const POST = async (request: Request) => {
-  const payload = await request.json();
-  const header = headers();
+app.post('/webhook', async (req: Request, res: Response) => {
+  const payload = req.body;
+  const header = req.headers;
 
-  const heads = {
-    "svix-id": header.get("svix-id"),
-    "svix-timestamp": header.get("svix-timestamp"),
-    "svix-signature": header.get("svix-signature"),
+  const heads: WebhookRequiredHeaders = {
+    'svix-id': header['svix-id'] as string,
+    'svix-timestamp': header['svix-timestamp'] as string,
+    'svix-signature': header['svix-signature'] as string,
   };
 
   // Activitate Webhook in the Clerk Dashboard.
@@ -56,7 +60,7 @@ export const POST = async (request: Request) => {
       heads as IncomingHttpHeaders & WebhookRequiredHeaders
     ) as Event;
   } catch (err) {
-    return NextResponse.json({ message: err }, { status: 400 });
+    return res.status(400).json({ message: err });;
   }
 
   const eventType: EventType = evnt?.type!;
@@ -80,13 +84,10 @@ export const POST = async (request: Request) => {
         created_by
       );
 
-      return NextResponse.json({ message: "User created" }, { status: 201 });
+      return res.status(201).json( {message: "User created" });
     } catch (err) {
       console.log(err);
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
     }
   }
 
@@ -98,17 +99,11 @@ export const POST = async (request: Request) => {
       // Resource: https://clerk.com/docs/reference/backend-api/tag/Organization-Invitations#operation/CreateOrganizationInvitation
       console.log("Invitation created", evnt?.data);
 
-      return NextResponse.json(
-        { message: "Invitation created" },
-        { status: 201 }
-      );
+      return res.status(201).json( {message: "Invitaion created" });
     } catch (err) {
       console.log(err);
-
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
+    
     }
   }
 
@@ -123,17 +118,11 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await addMemberToCommunity(organization.id, public_user_data.user_id);
 
-      return NextResponse.json(
-        { message: "Invitation accepted" },
-        { status: 201 }
-      );
+       return res.status(201).json( {message: "Invitaion accepted" });
     } catch (err) {
       console.log(err);
-
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
+    
     }
   }
 
@@ -148,14 +137,11 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await removeUserFromCommunity(public_user_data.user_id, organization.id);
 
-      return NextResponse.json({ message: "Member removed" }, { status: 201 });
+      
+       return res.status(201).json( {message: "Member  removed" });
     } catch (err) {
       console.log(err);
-
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
     }
   }
 
@@ -170,14 +156,12 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await updateCommunityInfo(id, name, slug, logo_url);
 
-      return NextResponse.json({ message: "Member removed" }, { status: 201 });
+      
+       return res.status(201).json( {message: "Member  removed" });
     } catch (err) {
       console.log(err);
-
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
+    
     }
   }
 
@@ -192,17 +176,21 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await deleteCommunity(id);
 
-      return NextResponse.json(
-        { message: "Organization deleted" },
-        { status: 201 }
-      );
+      
+       return res.status(201).json( {message: "Organization deleted" });
     } catch (err) {
       console.log(err);
-
-      return NextResponse.json(
-        { message: "Internal Server Error" },
-        { status: 500 }
-      );
+      return res.status(500).json({ message: "Internal Server Error" })
+    
     }
   }
-};
+  return res.status(200).json({ success: true });
+});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Express server is listening on port ${PORT}`);
+});
+
+
+
+
