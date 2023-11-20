@@ -16,9 +16,7 @@ A high-performance full-stack application developed with Next.js, MongoDB, and R
 
 This project is a Threads Clone app that allows users to create threads, post them on the home page, comment on other users' threads, create organizations, search for other users, and edit their profile, including adding a profile picture.
 
-## Demo
 
-Include a link or instructions on how to access the live demo if applicable.
 
 ## Tech Stack
 
@@ -29,7 +27,6 @@ Include a link or instructions on how to access the live demo if applicable.
 
 - **Backend:**
   - Node.js
-  - Express.js
   - MongoDB
 
 - **Authentication:**
